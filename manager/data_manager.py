@@ -8,28 +8,29 @@ PORT = 1883
 BASE_TOPIC = "rinatyael/iot_smart_home"
 TOPIC_TEMPERATURE = f"{BASE_TOPIC}/sensor/temperature"
 TOPIC_ALARM_STATE = f"{BASE_TOPIC}/alarm/state"
+TOPIC_ARMED = f"{BASE_TOPIC}/system/armed"
 
 TEMP_THRESHOLD = 28.0
 DB_PATH = "iot.db"
+
+system_armed = True
 
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS temperature_readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ts TEXT NOT NULL,
             value REAL NOT NULL
         )
-        """
-    )
+    """)
     conn.commit()
     conn.close()
 
 
-def save_temperature(value: float):
+def save_temperature(value):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
@@ -43,20 +44,29 @@ def save_temperature(value: float):
 def on_connect(client, userdata, flags, rc):
     print("DATA_MANAGER connected. rc =", rc)
     client.subscribe(TOPIC_TEMPERATURE)
+    client.subscribe(TOPIC_ARMED)
     print("Subscribed to:", TOPIC_TEMPERATURE)
+    print("Subscribed to:", TOPIC_ARMED)
 
 
 def on_message(client, userdata, msg):
-    try:
-        temp = float(msg.payload.decode().strip())
-    except ValueError:
-        print("Bad temperature payload:", msg.payload)
+    global system_armed
+
+    if msg.topic == TOPIC_ARMED:
+        payload = msg.payload.decode().strip().upper()
+        system_armed = (payload == "ON")
+        print("System armed:", "ON" if system_armed else "OFF")
+
+        if not system_armed:
+            client.publish(TOPIC_ALARM_STATE, "OFF")
+            print("Alarm state: OFF (system disarmed)")
         return
 
+    temp = float(msg.payload.decode().strip())
     print("Received temperature:", temp)
     save_temperature(temp)
 
-    alarm_on = temp >= TEMP_THRESHOLD
+    alarm_on = system_armed and (temp >= TEMP_THRESHOLD)
     client.publish(TOPIC_ALARM_STATE, "ON" if alarm_on else "OFF")
     print("Alarm state:", "ON" if alarm_on else "OFF")
 
