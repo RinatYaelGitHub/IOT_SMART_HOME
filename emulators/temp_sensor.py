@@ -5,7 +5,7 @@ import paho.mqtt.client as mqtt
 BROKER = "test.mosquitto.org"
 PORT = 1883
 
-BASE_TOPIC = "rinatyael/iot_smart_home"  
+BASE_TOPIC = "rinatyael/iot_smart_home"
 TOPIC_TEMPERATURE = f"{BASE_TOPIC}/sensor/temperature"
 
 PUBLISH_EVERY_SECONDS = 5

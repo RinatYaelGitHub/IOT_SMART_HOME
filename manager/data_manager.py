@@ -9,8 +9,7 @@ BASE_TOPIC = "rinatyael/iot_smart_home"
 TOPIC_TEMPERATURE = f"{BASE_TOPIC}/sensor/temperature"
 TOPIC_ALARM_STATE = f"{BASE_TOPIC}/alarm/state"
 
-TEMP_THRESHOLD = 28.0  # מעל זה נפעיל אזעקה
-
+TEMP_THRESHOLD = 28.0
 DB_PATH = "iot.db"
 
 
